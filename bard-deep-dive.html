@@ -284,6 +284,7 @@
     <ul>
       <li>One activation begins the work. Its songs then play in written order without further input.</li>
       <li>A song in the composition that is <strong>not on your song bar is skipped</strong>, and shown greyed in the performance display as it passes.</li>
+      <li>Beginning a composition announces it to everyone nearby: <em>Dayn begins to play Marching Orders by Dayn on drums.</em> A work played from someone else's sheet names its author, not its performer.</li>
       <li>Casting anything by hand — a song, a Serenade, or an Amplify — <strong>breaks the composition</strong> and drops you into <strong>jazz mode</strong>: ordinary manual play. Re-triggering the composition begins it again from the top.</li>
       <li><strong>Chorus is the only cast that does not break it</strong>, and <strong>Perform</strong> is a stance rather than a cast, so a composition carries on into it.</li>
       <li>Actions <strong>written into the work</strong> are part of the performance and never break it. The interruption rule is about reaching outside the composition, not about what is in it.</li>
@@ -299,27 +300,28 @@
     <tbody>
       <tr><td>Intro</td><td>The opener you want up before anything else — haste, or an attack buff</td></tr>
       <tr><td>Verse 1 &amp; 2</td><td>The body of the work: damage, or whatever the fight actually needs</td></tr>
-      <tr><td>Chorus &times;3</td><td>The refrain. Whatever you write here returns three times a cycle</td></tr>
+      <tr><td>Chorus &times;3</td><td>Three more open slots — the parts of the work you keep coming back to</td></tr>
       <tr><td>Bridge</td><td>The turn — the natural home for an Amplify or a Serenade</td></tr>
       <tr><td>Outro</td><td>The tail: a mana hymn, or a rest left deliberately empty</td></tr>
     </tbody>
   </table>
-  <div class="note">The three <strong>Chorus</strong> sections are the most interesting slots in the system, because a refrain repeats. A song written into the chorus is replayed three times per cycle, which keeps it freshly landed and — on Brass — keeps its resonance pinned near the cap while everything else decays. Your refrain is the song you have decided the fight is really about. Note this is the musical chorus, the returning part of a song, and not the Chorus ability; an action written into a refrain slot still obeys its own cooldown and will simply be skipped when it is not ready.</div>
+  <div class="note">Every section is a <strong>free slot</strong>. The eight names are scaffolding for a songwriter's thinking, not mechanics — the three Chorus sections do not lock to a single repeating refrain, and each holds whatever you write into it. A true repeating refrain is thematically lovely and was tempting, but it fights the way songs actually maintain: a Bard's strength is coverage across many effects, and hard-wiring one song to replay three times a cycle pulls against that for no mechanical gain. Write the same song into all three if you want it kept freshly landed, or write three different ones. Note also the name collision — the musical chorus is not the <strong>Chorus</strong> ability, though you may certainly write the ability into one.</div>
 
   <div class="seq">
-    <div class="cap">A composition · "Marching Orders" by Dayn</div>
+    <div class="cap">A composition · &ldquo;Marching Orders&rdquo; by Dayn · 8 songs, 24s cycle</div>
     <div class="slots">
       <div class="slot"><div class="i">Intro</div><div class="t">Allegro</div></div>
       <div class="slot"><div class="i">Verse 1</div><div class="t">Dismal Riffs</div></div>
       <div class="slot"><div class="i">Chorus</div><div class="t">Healing Hymn</div></div>
       <div class="slot"><div class="i">Verse 2</div><div class="t">Discordant Riffs</div></div>
-      <div class="slot"><div class="i">Chorus</div><div class="t">Healing Hymn</div></div>
-      <div class="slot"><div class="i">Bridge</div><div class="t">&#9670; Amplify</div></div>
-      <div class="slot"><div class="i">Chorus</div><div class="t">Healing Hymn</div></div>
-      <div class="slot skip"><div class="i">Outro</div><div class="t">rest</div></div>
+      <div class="slot"><div class="i">Chorus</div><div class="t">Hymn of Inspiration</div></div>
+      <div class="slot"><div class="i">Bridge</div><div class="t">Despondent Riffs</div></div>
+      <div class="slot"><div class="i">Chorus</div><div class="t">Aria de Lento</div></div>
+      <div class="slot"><div class="i">Outro</div><div class="t">Beats of War</div></div>
     </div>
-    <div class="seqline"><b style="left:0"></b><b style="left:33.3%"></b><b style="left:66.6%"></b><b style="left:calc(100% - 1px)"></b></div>
-    <div class="seqfoot"><span>0s</span><span>6s tick</span><span>12s tick</span><span>18s tick</span></div>
+    <div class="seqline"><b style="left:0"></b><b style="left:25%"></b><b style="left:50%"></b><b style="left:75%"></b><b style="left:calc(100% - 1px)"></b></div>
+    <div class="seqfoot"><span>0s</span><span>6s</span><span>12s</span><span>18s</span><span>24s</span></div>
+    <div class="cap" style="margin:10px 0 0; text-transform:none; letter-spacing:0; font-size:11.5px">Eight songs at three seconds each is a 24-second cycle — one tick every two sections. Written this way the work only sustains on String; swap a section for an instant action and the cycle shortens.</div>
   </div>
 
   <h3>Why eight sections works</h3>

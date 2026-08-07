@@ -98,7 +98,6 @@
   .sect{display:grid; grid-template-columns:64px 1fr; gap:7px; align-items:center; margin-bottom:5px}
   .sect .lbl{font-size:10px; font-family:"Trebuchet MS",sans-serif; letter-spacing:.06em; text-transform:uppercase;
     color:var(--faint); text-align:right}
-  .sect.refrain .lbl{color:var(--gold)}
   .sect select{font-size:12px; padding:5px 7px}
   .medbar{display:flex; gap:5px; margin-top:9px; flex-wrap:wrap}
   .mstep{flex:1 1 auto; min-width:9px; height:5px; border-radius:3px; background:var(--line)}
@@ -172,11 +171,12 @@
         <h2>Medley</h2>
         <div class="medhead">
           <input type="text" id="medName" value="Marching Orders" maxlength="28" placeholder="Name your medley" aria-label="Medley name">
+          <input type="text" id="bardName" value="Dayn" maxlength="16" placeholder="Bard" aria-label="Bard name" style="max-width:88px">
           <label class="toggle" title="Repeat from the top when it reaches the end"><input type="checkbox" id="medLoop" checked> loop</label>
         </div>
         <div id="sections"></div>
         <div class="medbar" id="medBar"></div>
-        <div class="hint">Write a composition in eight sections. Any section can hold a song or an action. Songs must also be on your song bar above, or the section is skipped. Only Chorus and the Perform stance leave a medley running — anything else drops you into jazz.</div>
+        <div class="hint">Write a composition in eight sections. Every section is a free slot holding any song or action — the names are song form, not rules. Songs must also be on your song bar above, or the section is skipped. Only Chorus and the Perform stance leave a medley running — anything else drops you into jazz.</div>
       </div>
       <details>
         <summary>Instrument tuning</summary>
@@ -269,6 +269,7 @@ const SONGS = {
   "Aria de Lento (slow)":   { type:"slow", bp:[[30,20],[50,30]] },  // 25% orc slow
   "Beats of War (+atk)":    { type:"atk",  bp:[[1,2],[16,4]] },     // +4 warrior hit damage
 };
+const INST_EMOTE = { Percussion:"on drums", String:"on the lute", Wind:"on the flute", Brass:"on the horn", None:"" };
 const TYPE_COLOR = { dot:"#c8552d", heal:"#3f9d6f", mana:"#4a78c2", haste:"#d9a832", slow:"#7a8aa0", atk:"#c9a24a" };
 const TICKABLE = { dot:1, heal:1, mana:1 };
 /* Medley: a written composition of eight sections, in song form */
@@ -600,10 +601,10 @@ const GLYPH={
   Brass:'<svg width="22" height="16" viewBox="0 0 20 16"><path d="M2 8h7M9 4a4 4 0 0 1 0 8M14 5v6M16.5 5v6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
   None:'<svg width="22" height="16" viewBox="0 0 20 16"><path d="M10 2v9M8 4l2-2 2 2M10 11l-3 3h6z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',
 };
-const state={ inst:'Percussion', attack:false, speed:1, kills:0, phase:'ready', sim:null, fightSeed:1,
+const state={ bardName:'Dayn', inst:'Percussion', attack:false, speed:1, kills:0, phase:'ready', sim:null, fightSeed:1,
   songs:["Dismal Riffs","Discordant Riffs","Despondent Riffs","Healing Hymn","Hymn of Inspiration","Allegro Moderato (haste)","","",""],
   medley:{ name:"Marching Orders", loop:true,
-    slots:["Allegro Moderato (haste)","Dismal Riffs","Healing Hymn","Discordant Riffs","Healing Hymn","@amplify","Healing Hymn",""] } };
+    slots:["Allegro Moderato (haste)","Dismal Riffs","Healing Hymn","Discordant Riffs","Hymn of Inspiration","@amplify","Despondent Riffs",""] } };
 const $=id=>document.getElementById(id);
 const SONG_NAMES=Object.keys(SONGS);
 
@@ -643,7 +644,7 @@ function buildSections(){
   const host=$('sections'); host.innerHTML='';
   MEDLEY_SECTIONS.forEach((label,i)=>{
     const row=document.createElement('div');
-    row.className='sect'+(label==='Chorus'?' refrain':'');
+    row.className='sect';
     const lbl=document.createElement('span'); lbl.className='lbl'; lbl.textContent=label;
     const sel=document.createElement('select');
     sel.setAttribute('aria-label',label+' section');
@@ -690,7 +691,7 @@ function buildTuning(){
   }));
 }
 function setControlsLocked(lock){
-  document.querySelectorAll('#slots select, #tuneBox input, #sections select, #medName, #medLoop').forEach(el=>el.disabled=lock);
+  document.querySelectorAll('#slots select, #tuneBox input, #sections select, #medName, #bardName, #medLoop').forEach(el=>el.disabled=lock);
 }
 
 /* ============================================================
@@ -996,7 +997,10 @@ function consumeEvents(){
       case 'performStart': notes('bard','#c9a24a',10);
         log('<b style="color:var(--gold)">Perform</b> — your songs open to everyone nearby'); break;
       case 'performEnd': log(e.reason==='mana'?'<span style="color:#d98a2b">Perform ends — out of mana</span>':'Perform ends'); break;
-      case 'medleyStart': notes('bard','#c9a24a',12); ring('bard','#c9a24a'); break;
+      case 'medleyStart': { notes('bard','#c9a24a',12); ring('bard','#c9a24a');
+        const who=state.bardName||'Dayn', on=INST_EMOTE[state.inst]||'';
+        log(`<span style="color:#d9b46a">${who} begins to play <i>${e.name}</i> by ${who}${on?' '+on:''}.</span>`);
+        floatText('bard','\u266b '+e.name,'#d9b46a',13,0); } break;
       case 'medleyLoop': ring('bard','#8f7333'); break;
       case 'medleyEnd': log(`<b>${e.name}</b> finishes — back to playing by hand`); break;
       case 'medleyBreak': log(`<b style="color:#d98a2b">JAZZ</b> — the medley breaks (${e.reason})`); break;
@@ -1138,6 +1142,7 @@ $('serenadeBtn').addEventListener('click',()=>{ const s=state.sim; if(!s||state.
 });
 $('serenadeSel').addEventListener('change',e=>{ if(state.sim)state.sim.bard.serenadeSong=e.target.value; });
 $('medName').addEventListener('input',e=>{ state.medley.name=e.target.value||'Untitled'; });
+$('bardName').addEventListener('input',e=>{ state.bardName=e.target.value||'Dayn'; });
 $('medLoop').addEventListener('change',e=>{ state.medley.loop=e.target.checked; });
 $('medleyBtn').addEventListener('click',()=>{ const s=state.sim; if(!s||state.phase!=='running')return;
   if(s.bard.medleyActive)return;
