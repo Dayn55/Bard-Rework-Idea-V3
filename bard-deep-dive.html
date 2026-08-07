@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bard — Deep Dive v3 (Community Proposal) · Re-strung</title>
+<meta name="description" content="A fan-made Bard class deep dive for Monsters &amp; Memories: instrument families, the Composition system, Amplify, Perform, and Serenade. Community proposal — not official.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=JetBrains+Mono:wght@400;500&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14110f; --panel:#1b1713; --panel2:#221d18; --line:#3a322a;
+    --parch:#e8dcc4; --body:#d5c9b4; --muted:#a2947f; --faint:#7a6e5e;
+    --gold:#c9a24a; --gold-deep:#8f7333;
+    --wind:#4aa9b8; --string:#c0773f; --perc:#8a6fd0; --brass:#c9a24a;
+    --warn:#d98a2b;
+    --measure:760px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} *{animation:none!important; transition:none!important} }
+  body{margin:0; background:var(--ink); color:var(--body);
+    font-family:"Spectral",Palatino,Georgia,serif; font-size:17.5px; line-height:1.62;
+    -webkit-font-smoothing:antialiased}
+
+  /* ---------- unofficial banner ---------- */
+  .flag{position:sticky; top:0; z-index:50; background:#2a1c0c; border-bottom:1px solid var(--gold-deep);
+    color:var(--gold); font-family:"JetBrains Mono",ui-monospace,monospace; font-size:11.5px;
+    letter-spacing:.14em; text-transform:uppercase; text-align:center; padding:9px 14px}
+  .flag b{color:#ffdc94; font-weight:500}
+
+  .wrap{max-width:var(--measure); margin:0 auto; padding:0 22px}
+
+  /* ---------- masthead ---------- */
+  header.mast{padding:64px 0 34px; border-bottom:1px solid var(--line)}
+  .kicker{font-family:"JetBrains Mono",monospace; font-size:11.5px; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--faint)}
+  h1{font-family:"Marcellus",Palatino,serif; font-weight:400; font-size:clamp(42px,8vw,74px);
+    line-height:1.02; margin:16px 0 0; color:var(--parch); letter-spacing:.01em}
+  h1 em{font-style:normal; color:var(--gold)}
+  .standfirst{margin:20px 0 0; font-size:19px; color:var(--parch); max-width:56ch}
+  .byline{margin-top:22px; font-family:"JetBrains Mono",monospace; font-size:12px;
+    color:var(--muted); line-height:1.9}
+  .byline span{color:var(--faint)}
+
+  /* ---------- disclaimer card ---------- */
+  .disclaim{margin:30px 0 0; border:1px solid var(--gold-deep); border-left-width:4px;
+    background:linear-gradient(180deg,rgba(201,162,74,.09),transparent); border-radius:4px; padding:16px 20px}
+  .disclaim p{margin:0; font-size:15.5px; color:var(--parch)}
+  .disclaim p+p{margin-top:9px; color:var(--muted); font-size:14.5px}
+
+  /* ---------- sections ---------- */
+  section{padding:52px 0 0}
+  .eyebrow{font-family:"JetBrains Mono",monospace; font-size:11px; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--gold-deep); margin-bottom:12px}
+  h2{font-family:"Marcellus",serif; font-weight:400; font-size:clamp(28px,4.4vw,38px);
+    color:var(--parch); margin:0 0 6px; line-height:1.15}
+  h3{font-family:"Marcellus",serif; font-weight:400; font-size:23px; color:var(--gold);
+    margin:34px 0 10px}
+  h4{font-family:"JetBrains Mono",monospace; font-weight:500; font-size:13px; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--parch); margin:26px 0 8px}
+  p{margin:0 0 15px}
+  a{color:var(--gold); text-decoration:none; border-bottom:1px solid var(--gold-deep)}
+  a:hover{color:#ffdc94; border-bottom-color:#ffdc94}
+  a:focus-visible,button:focus-visible{outline:2px solid var(--gold); outline-offset:3px}
+  strong{color:var(--parch); font-weight:600}
+
+  /* staff-line divider — five rules, like a musical stave */
+  .stave{margin:52px 0 0; height:26px; position:relative; opacity:.5}
+  .stave i{position:absolute; left:0; right:0; height:1px; background:var(--line)}
+  .stave i:nth-child(1){top:0} .stave i:nth-child(2){top:6px} .stave i:nth-child(3){top:12px}
+  .stave i:nth-child(4){top:18px} .stave i:nth-child(5){top:24px}
+  .stave b{position:absolute; left:50%; top:2px; transform:translateX(-50%);
+    background:var(--ink); padding:0 14px; color:var(--gold); font-size:17px; line-height:1}
+
+  /* ---------- ability entries ---------- */
+  .ability{border:1px solid var(--line); border-radius:5px; background:var(--panel);
+    padding:15px 18px; margin:0 0 11px}
+  .ability .nm{font-family:"Marcellus",serif; font-size:19px; color:var(--parch); margin-bottom:3px}
+  .ability .nm .tag{font-family:"JetBrains Mono",monospace; font-size:10px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--ink); background:var(--gold); border-radius:3px;
+    padding:2px 7px; margin-left:9px; vertical-align:2px}
+  .ability .nm .tag.alt{background:transparent; color:var(--muted); border:1px solid var(--line)}
+  .ability ul{margin:8px 0 0; padding-left:19px}
+  .ability li{margin-bottom:4px}
+  .ability li::marker{color:var(--gold-deep)}
+
+  /* designer commentary — the italic aside the official dives use */
+  .note{border-left:2px solid var(--gold-deep); padding:2px 0 2px 16px; margin:12px 0 22px;
+    font-style:italic; color:var(--muted); font-size:16px}
+  .note strong{color:var(--parch); font-style:normal; font-weight:600}
+
+  /* ---------- instrument grid ---------- */
+  .insts{display:grid; grid-template-columns:repeat(auto-fit,minmax(168px,1fr)); gap:11px; margin:18px 0 6px}
+  .inst{border:1px solid var(--line); border-top-width:3px; border-radius:5px;
+    background:var(--panel); padding:13px 15px}
+  .inst .n{font-family:"Marcellus",serif; font-size:18px; color:var(--parch)}
+  .inst .v{font-family:"JetBrains Mono",monospace; font-size:12.5px; margin-top:5px}
+  .inst .d{font-size:14.5px; color:var(--muted); margin-top:7px; line-height:1.5}
+  .i-wind{border-top-color:var(--wind)} .i-wind .v{color:var(--wind)}
+  .i-string{border-top-color:var(--string)} .i-string .v{color:var(--string)}
+  .i-perc{border-top-color:var(--perc)} .i-perc .v{color:var(--perc)}
+  .i-brass{border-top-color:var(--brass)} .i-brass .v{color:var(--brass)}
+
+  /* ---------- composition sequencer (signature element) ---------- */
+  .seq{border:1px solid var(--line); border-radius:6px; background:var(--panel);
+    padding:20px 18px 16px; margin:22px 0}
+  .seq .cap{font-family:"JetBrains Mono",monospace; font-size:11px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--faint); margin-bottom:14px}
+  .slots{display:flex; gap:5px; flex-wrap:wrap}
+  .slot{flex:1 1 76px; min-width:70px; border:1px solid var(--line); border-radius:4px;
+    background:var(--panel2); padding:9px 6px; text-align:center}
+  .slot .i{font-family:"JetBrains Mono",monospace; font-size:9.5px; color:var(--faint); letter-spacing:.1em}
+  .slot .t{font-size:13.5px; color:var(--parch); margin-top:3px; line-height:1.25}
+  .slot.skip{opacity:.42; border-style:dashed}
+  .slot.skip .t{color:var(--muted); font-style:italic}
+  .seqline{margin-top:14px; height:1px; background:var(--line); position:relative}
+  .seqline b{position:absolute; top:-7px; width:1px; height:13px; background:var(--gold-deep)}
+  .seqfoot{display:flex; justify-content:space-between; margin-top:8px;
+    font-family:"JetBrains Mono",monospace; font-size:11px; color:var(--faint)}
+
+  /* ---------- tables ---------- */
+  table{width:100%; border-collapse:collapse; margin:16px 0 8px; font-size:15px}
+  th,td{text-align:left; padding:9px 11px; border-bottom:1px solid var(--line)}
+  th{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.11em;
+    text-transform:uppercase; color:var(--gold-deep); font-weight:500}
+  td{color:var(--body)} td:first-child{color:var(--parch)}
+  td.num{font-family:"JetBrains Mono",monospace; font-variant-numeric:tabular-nums}
+  tr.yes td.num{color:var(--gold)}
+  tr.no td.num{color:var(--warn)}
+
+  /* ---------- more / less ---------- */
+  .ml{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:18px 0 6px}
+  @media (max-width:620px){ .ml{grid-template-columns:1fr} }
+  .ml div{border:1px solid var(--line); border-radius:5px; padding:14px 17px; background:var(--panel)}
+  .ml h5{font-family:"JetBrains Mono",monospace; font-size:11px; letter-spacing:.16em;
+    text-transform:uppercase; margin:0 0 9px; color:var(--gold)}
+  .ml ul{margin:0; padding-left:18px} .ml li{margin-bottom:6px; font-size:15.5px}
+  .ml li::marker{color:var(--gold-deep)}
+
+  /* ---------- try-it ---------- */
+  .try{border:1px solid var(--gold-deep); border-radius:6px; padding:22px 24px; margin:26px 0 0;
+    background:linear-gradient(180deg,rgba(201,162,74,.07),transparent)}
+  .btnrow{display:flex; gap:11px; flex-wrap:wrap; margin-top:16px}
+  .btn{font-family:"JetBrains Mono",monospace; font-size:12.5px; letter-spacing:.05em;
+    padding:11px 17px; border-radius:5px; border:1px solid var(--gold-deep);
+    color:var(--gold); background:transparent; display:inline-block}
+  .btn.solid{background:var(--gold); color:#1c1407; border-color:var(--gold); font-weight:500}
+  .btn:hover{background:var(--gold); color:#1c1407}
+  .btn.solid:hover{background:var(--parch); border-color:var(--parch)}
+
+  footer{margin-top:64px; border-top:1px solid var(--line); padding:26px 0 70px;
+    font-size:14px; color:var(--faint)}
+  footer p{margin-bottom:9px}
+</style>
+</head>
+<body>
+
+<div class="flag">Community proposal — <b>not an official Monsters &amp; Memories document</b></div>
+
+<div class="wrap">
+
+<header class="mast">
+  <div class="kicker">Fan-made class concept · Monsters &amp; Memories</div>
+  <h1>Bard — <em>Deep Dive</em></h1>
+  <p class="standfirst">A community rework proposal built around instrument identity, the six-second heartbeat, and a song-writing system that lets a Bard compose, name, and trade their own performances.</p>
+  <div class="byline">
+    Written by <strong>Dayn</strong> · Community proposal, <strong>v3</strong> · <a href="./bard-deep-dive-v2.html" style="color:var(--muted)">read v2</a><br>
+    <span>Format follows the official class deep dives. Content is entirely unofficial.</span>
+  </div>
+
+  <div class="disclaim">
+    <p><strong>This is a fan proposal.</strong> It is not written by, endorsed by, or affiliated with Niche Worlds Cult or the Monsters &amp; Memories team. Nothing here is in the game, planned for the game, or promised.</p>
+    <p>It is written in the shape of an official deep dive purely so the ideas are easy to evaluate against the real ones. Every ability, number, and system below is a suggestion offered for discussion.</p>
+  </div>
+  <div class="disclaim" style="border-color:var(--line); background:none">
+    <p style="font-size:14.5px; color:var(--muted)"><strong style="color:var(--parch)">New in version 3:</strong> compositions are now written in eight sections following ordinary song form, and any section may hold an action as well as a song. Amplify is retuned to +50% per stack to a maximum of three. Perform becomes a held stance. <a href="./bard-deep-dive-v2.html">Version 2 is archived here.</a></p>
+  </div>
+</header>
+
+<section id="overview">
+  <div class="eyebrow">Overview</div>
+  <h2>What this proposal is</h2>
+  <p>The official Bard class page sets out a clear direction: instruments should become a normal part of play rather than an optional bonus, the song list needs more depth on the damage side, and charm should stop being a sustained playstyle. This proposal takes those stated goals and works out what they look like in practice.</p>
+  <p>The core argument is that the Bard already has the most interesting resource in the game — <strong>attention</strong>. A Bard's limit is not mana or cooldowns, it's how many things one person can keep in the air at once. Everything below is built to make that limit meaningful, readable, and worth mastering, instead of simply making it fast.</p>
+  <p>Two working models accompany this document: a song modeler for comparing rotations across instruments, and a playable level-40 battle simulator. Both are linked at the end, and every number quoted here comes from them.</p>
+
+  <div class="ml">
+    <div>
+      <h5>More</h5>
+      <ul>
+        <li>Instruments with real, distinct mechanical identities that apply to every song</li>
+        <li>A reason to commit to one instrument rather than swap constantly</li>
+        <li>Player-authored songs that can be named, traded, and taught</li>
+        <li>Burst tools that reward reading a fight instead of maintaining a loop</li>
+      </ul>
+    </div>
+    <div>
+      <h5>Less</h5>
+      <ul>
+        <li>Charm as an all-day rotation option</li>
+        <li>Instrument swapping mid-fight as the optimal play</li>
+        <li>Spreadsheet depth that rewards memorization over judgment</li>
+        <li>Mandatory seven-key twisting just to hold a baseline</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="stave"><i></i><i></i><i></i><i></i><i></i><b>&#9835;</b></div>
+
+<section id="foundation">
+  <div class="eyebrow">Foundation</div>
+  <h2>The heartbeat</h2>
+  <p>Every song in this proposal runs on the same clock. A song takes <strong>3 seconds</strong> to play, lasts <strong>18 seconds</strong> once it lands, and delivers its effect on the world's <strong>6-second tick</strong>.</p>
+  <p>The sequence matters and is worth stating plainly, because every instrument bends one part of it: a song is <em>started</em>, it <em>lands</em> at the end of its cast, and only then is its effect <em>present</em>. A song that lands a moment after a tick contributes nothing to that tick. Holding a song is not about pressing keys quickly; it's about landing them before the beat.</p>
+  <p>That gives a Bard a natural capacity of <strong>six songs</strong>: six casts at three seconds each is eighteen seconds, exactly one song's duration. Play a seventh and the first has already fallen off by the time you return to it. This single relationship is the spine of the whole design.</p>
+</section>
+
+<section id="instruments">
+  <div class="eyebrow">Instrument Families</div>
+  <h2>Four instruments, four identities</h2>
+  <p>Instruments are the Bard's specialization choice. Each grants <strong>one flat benefit that applies to every song you play</strong> — not a list of conditional bonuses, and not a per-song lookup table. You should be able to explain your instrument in a single sentence.</p>
+
+  <div class="insts">
+    <div class="inst i-wind"><div class="n">Wind</div><div class="v">&minus;0.5s cast time</div>
+      <div class="d">Songs play in 2.5s. Reach through speed: you can hold a seventh song.</div></div>
+    <div class="inst i-string"><div class="n">String</div><div class="v">+6s duration</div>
+      <div class="d">Songs last 24s. Reach through persistence: you can hold an eighth.</div></div>
+    <div class="inst i-perc"><div class="n">Percussion</div><div class="v">+10% per cast</div>
+      <div class="d">Each cast lands an immediate pulse of its effect, on the off-beat between ticks.</div></div>
+    <div class="inst i-brass"><div class="n">Brass</div><div class="v">+10% per recast, to +35%</div>
+      <div class="d">Resonance builds as you hold a song and resets the instant it drops.</div></div>
+  </div>
+
+  <div class="note">The trade is <strong>reach against magnitude</strong>. Wind and String widen how much you can carry; Percussion and Brass deepen what each song is worth. Neither wins outright — in the modeler, a wide five-song rotation on Wind and the same rotation on Percussion finish within a few percent of each other, but they get there in completely different ways, and they fail in different ways when a fight goes wrong.</div>
+
+  <h3>Attunement</h3>
+  <p>Attunement is a <strong>commitment, not a number</strong>. You are attuned to one family at a time; switching is a deliberate out-of-combat act, not a mid-fight optimization. There is no stacking attunement stat to grind, and no reward for carrying four instruments and hot-swapping between songs.</p>
+  <div class="note">This is the change that does the most work in the whole proposal. The moment instrument swapping is optimal, it becomes mandatory, and the Bard turns into an inventory-management class. Making attunement binary means your instrument is an <strong>identity</strong> other players can recognize, not a rotation step.</div>
+
+  <h3>Resonance</h3>
+  <p>Resonance belongs to <strong>Brass alone</strong>. Each time you refresh a song without letting it lapse, that song gains 10% potency, capping at +35%. Let it drop and it starts over.</p>
+  <div class="note">Giving every instrument a resonance mechanic made all four feel the same. Restricting it to Brass gives one instrument a genuine identity — the Bard who commits to a narrow set of songs and is punished hardest for a mistake — and leaves the others to be about coverage.</div>
+</section>
+
+<div class="stave"><i></i><i></i><i></i><i></i><i></i><b>&#9834;</b></div>
+
+<section id="compositions">
+  <div class="eyebrow">New System</div>
+  <h2>Compositions</h2>
+  <p>This is the piece of the proposal that is genuinely new, and the part most worth arguing about.</p>
+  <p>A <strong>Composition</strong> is up to seven songs woven into a single performance. You play it once and it moves through its songs in order on its own, with no further input. It is authored by a player, given a name, written down, and can be handed to another Bard.</p>
+
+  <h3>Writing one</h3>
+  <div class="ability">
+    <div class="nm">Compose <span class="tag">New</span></div>
+    <ul>
+      <li>Purchase a sheet of <strong>ruled vellum</strong> from a Bards Guild vendor.</li>
+      <li>Fill in the eight sections of ordinary song form — <strong>Intro, Verse, Chorus, Verse, Chorus, Bridge, Chorus, Outro</strong>. Any section may hold a song, an action, or nothing at all.</li>
+      <li>Choose whether the work <strong>plays through once</strong> or <strong>repeats</strong> when it reaches the end.</li>
+      <li>Name the work. The finished sheet permanently records its title and the name of the Bard who wrote it.</li>
+    </ul>
+  </div>
+  <div class="note">Looping or one-shot is fixed at the moment of writing, which makes it a real authoring decision rather than a toggle. A one-shot composition is an opener — a setup you fire once at the pull. A looping composition is a floor you leave running.</div>
+
+  <h3>Scribing, trading, and loss</h3>
+  <div class="ability">
+    <div class="nm">The Composition Book <span class="tag alt">Item</span></div>
+    <ul>
+      <li>A written sheet is an <strong>item</strong>. It can be given away, sold, or left in a bank until it is scribed.</li>
+      <li>Scribing a sheet copies the work into your <strong>composition book</strong> and consumes the sheet.</li>
+      <li>Any composition you have scribed can be <strong>transcribed onto a fresh sheet</strong> for the cost of the vellum, so a good work can spread without its author rewriting it from scratch.</li>
+      <li>Like a spellbook, your composition book is left behind on death.</li>
+      <li>Composition titles are <strong>filtered and moderated</strong> under the same rules as pet names.</li>
+    </ul>
+  </div>
+  <div class="note">The author's name travels with the work permanently. A Bard who writes something genuinely good gets credited every time it changes hands, on every server it reaches — the rare kind of reputation a player earns by being thoughtful rather than by being first to a boss.</div>
+
+  <h3>Playing one</h3>
+  <div class="ability">
+    <div class="nm">Performing a Composition</div>
+    <ul>
+      <li>One activation begins the work. Its songs then play in written order without further input.</li>
+      <li>A song in the composition that is <strong>not on your song bar is skipped</strong>, and shown greyed in the performance display as it passes.</li>
+      <li>Casting anything by hand — a song, a Serenade, or an Amplify — <strong>breaks the composition</strong> and drops you into <strong>jazz mode</strong>: ordinary manual play. Re-triggering the composition begins it again from the top.</li>
+      <li><strong>Chorus is the only cast that does not break it</strong>, and <strong>Perform</strong> is a stance rather than a cast, so a composition carries on into it.</li>
+      <li>Actions <strong>written into the work</strong> are part of the performance and never break it. The interruption rule is about reaching outside the composition, not about what is in it.</li>
+    </ul>
+  </div>
+
+  <div class="note">Amplify breaking the composition is deliberate, and it draws the cleanest line in the class. A composition is the <strong>floor</strong> — the thing you leave running while your attention is elsewhere. Amplify is the <strong>spike</strong>, and spikes belong to hands-on play. You cannot hold a hands-free floor and land a three-stack burst at the same time; choosing to amplify is choosing to take the reins back. Chorus is the single exception because it swells everything you are already playing rather than redirecting you.</div>
+
+  <h3>Song form</h3>
+  <p>A composition is not a list, it is a <strong>structure</strong>. The eight sections are the shape almost every song you have ever heard is built on, and writing into them makes a Bard think like a songwriter rather than a spreadsheet.</p>
+  <table>
+    <thead><tr><th>Section</th><th>What it tends to hold</th></tr></thead>
+    <tbody>
+      <tr><td>Intro</td><td>The opener you want up before anything else — haste, or an attack buff</td></tr>
+      <tr><td>Verse 1 &amp; 2</td><td>The body of the work: damage, or whatever the fight actually needs</td></tr>
+      <tr><td>Chorus &times;3</td><td>The refrain. Whatever you write here returns three times a cycle</td></tr>
+      <tr><td>Bridge</td><td>The turn — the natural home for an Amplify or a Serenade</td></tr>
+      <tr><td>Outro</td><td>The tail: a mana hymn, or a rest left deliberately empty</td></tr>
+    </tbody>
+  </table>
+  <div class="note">The three <strong>Chorus</strong> sections are the most interesting slots in the system, because a refrain repeats. A song written into the chorus is replayed three times per cycle, which keeps it freshly landed and — on Brass — keeps its resonance pinned near the cap while everything else decays. Your refrain is the song you have decided the fight is really about. Note this is the musical chorus, the returning part of a song, and not the Chorus ability; an action written into a refrain slot still obeys its own cooldown and will simply be skipped when it is not ready.</div>
+
+  <div class="seq">
+    <div class="cap">A composition · "Marching Orders" by Dayn</div>
+    <div class="slots">
+      <div class="slot"><div class="i">Intro</div><div class="t">Allegro</div></div>
+      <div class="slot"><div class="i">Verse 1</div><div class="t">Dismal Riffs</div></div>
+      <div class="slot"><div class="i">Chorus</div><div class="t">Healing Hymn</div></div>
+      <div class="slot"><div class="i">Verse 2</div><div class="t">Discordant Riffs</div></div>
+      <div class="slot"><div class="i">Chorus</div><div class="t">Healing Hymn</div></div>
+      <div class="slot"><div class="i">Bridge</div><div class="t">&#9670; Amplify</div></div>
+      <div class="slot"><div class="i">Chorus</div><div class="t">Healing Hymn</div></div>
+      <div class="slot skip"><div class="i">Outro</div><div class="t">rest</div></div>
+    </div>
+    <div class="seqline"><b style="left:0"></b><b style="left:33.3%"></b><b style="left:66.6%"></b><b style="left:calc(100% - 1px)"></b></div>
+    <div class="seqfoot"><span>0s</span><span>6s tick</span><span>12s tick</span><span>18s tick</span></div>
+  </div>
+
+  <h3>Why eight sections works</h3>
+  <p>Eight sections is not eight songs, and that distinction is what makes the structure balance itself. Actions resolve instantly, so <strong>every action you write in place of a song shortens the cycle</strong> and makes the whole work easier to sustain.</p>
+  <table>
+    <thead><tr><th>Written as</th><th>Cycle</th><th>Base &amp; Percussion &amp; Brass</th><th>Wind</th><th>String</th></tr></thead>
+    <tbody>
+      <tr class="no"><td>8 songs</td><td class="num">24.0s</td><td class="num">Drops</td><td class="num">Drops</td><td class="num">Holds</td></tr>
+      <tr><td>7 songs + 1 action</td><td class="num">21.0s</td><td class="num">Drops</td><td class="num">Holds</td><td class="num">Holds</td></tr>
+      <tr class="yes"><td>6 songs + 2 actions</td><td class="num">18.0s</td><td class="num">Holds</td><td class="num">Holds</td><td class="num">Holds</td></tr>
+    </tbody>
+  </table>
+  <div class="note">A composition written as eight straight songs only holds together on <strong>String</strong>, the instrument built for reach. Everything else has to earn its sustain by writing rests or actions into the form — which is to say, by writing a better song rather than a longer one. That is a pleasing thing for the mechanics to insist on, and it comes free from timing rules that already existed.</div>
+
+  <h3>On automation</h3>
+  <p>The obvious objection is that this plays the class for you. It doesn't, and the reason is worth being precise about: <strong>a composition delivers exactly what twisting those same songs in that same order by hand would deliver.</strong> No extra potency, no faster casts, no additional capacity. It adds no power at all.</p>
+  <p>What it trades is <strong>flexibility for attention</strong>. A Bard playing by hand reacts — drops the mana song when nobody needs mana, re-lands a slow the instant it lapses, reorders on the fly. A Bard running a composition has given that up in exchange for hands free, and the moment the fight demands a decision they have to break the work and pay the cost of restarting it from the top.</p>
+  <div class="note">Following the precedent set by the Wizard's Incantations, this should be an <strong>optional mastery system</strong>. Every song remains castable the traditional way, and a Bard who never writes a single composition should remain fully competitive. Compositions are for the player who wants to hold a floor while watching the fight instead of watching their own hotbar — and for the one who wants their name on something.</div>
+</section>
+
+<div class="stave"><i></i><i></i><i></i><i></i><i></i><b>&#9836;</b></div>
+
+<section id="abilities">
+  <div class="eyebrow">Active Abilities</div>
+  <h2>Four things to press</h2>
+  <p>Songs are the floor. These are the decisions layered on top — each one a moment where a Bard spends something to change the shape of a fight.</p>
+
+  <div class="ability">
+    <div class="nm">Amplify <span class="tag">New</span></div>
+    <ul>
+      <li>Consume <strong>Mana</strong> at the start of the cast to amplify the <strong>next song you play</strong>, increasing its potency by 50%.</li>
+      <li>This effect stacks up to three times, for a maximum of +150%.</li>
+      <li>Amplify stacks <strong>additively</strong> with Chorus and with Brass resonance.</li>
+      <li>Casting Amplify breaks a composition in progress.</li>
+    </ul>
+  </div>
+  <table>
+    <thead><tr><th>Stacks</th><th>1</th><th>2</th><th>3</th></tr></thead>
+    <tbody>
+      <tr><td>Added potency</td><td class="num">+50%</td><td class="num">+100%</td><td class="num">+150%</td></tr>
+      <tr><td>Song potency</td><td class="num">&times;1.50</td><td class="num">&times;2.00</td><td class="num">&times;2.50</td></tr>
+    </tbody>
+  </table>
+  <h4>The ceiling</h4>
+  <table>
+    <thead><tr><th>Source</th><th>Contribution</th><th>Running total</th></tr></thead>
+    <tbody>
+      <tr><td>Amplify &times;3</td><td class="num">+150%</td><td class="num">&times;2.50</td></tr>
+      <tr><td>Chorus</td><td class="num">+50%</td><td class="num">&times;3.00</td></tr>
+      <tr class="yes"><td>Brass, fully resonant</td><td class="num">+35%</td><td class="num">&times;3.35</td></tr>
+    </tbody>
+  </table>
+  <div class="note">Three stacks is the right cap because the mana is paid <strong>up front, on each cast</strong>, before you know whether the song will matter. Stacking to three is a bet: three separate mana payments and three casts of setup spent on a single song that hasn't landed yet. Get it right and a fully stacked Brass Bard under Chorus lands a song at <strong>three and a third times</strong> its written value — the largest single number in the class, and one that took real commitment to reach. Amplify also finally gives the Bard a reason to have a mana pool at all, which a class of mostly free songs otherwise lacks.</div>
+
+  <div class="ability">
+    <div class="nm">Perform <span class="tag">New</span></div>
+    <ul>
+      <li>Open your performance to the room. While this stance is active, your songs reach allies within a short radius <strong>even if they are not in your group</strong>.</li>
+      <li>This is a <strong>stance</strong>, toggled on and off, that slowly drains <strong>Mana</strong> while held.</li>
+      <li>Perform does not interrupt a performance. Enter the stance before you begin, and your composition or held song carries on into it.</li>
+      <li>Perform may be combined with Serenade.</li>
+    </ul>
+  </div>
+  <div class="note">This is the ability that turns a Bard into a fixture of a place rather than a slot in a group. Set a mana song running on the west bank at Night Harbor and hold the stance. Or write a short composition — a travel march and the healing hymn — toggle Perform, and walk the West Gate keeping every passing newbie fed and moving, none of whom you'll ever group with. The mana drain is the whole cost: generosity you can afford for a while, not forever. And because it stacks with Serenade, a Bard can channel a full six-tick heal into a stranger who is about to die in front of them.</div>
+
+  <div class="ability">
+    <div class="nm">Chorus</div>
+    <ul>
+      <li>For 18 seconds, every song you play lands at <strong>+50% effect</strong>, regardless of instrument.</li>
+      <li>Stacks additively with Brass resonance, for up to +85% on a fully resonant song.</li>
+      <li>Six-minute cooldown.</li>
+    </ul>
+  </div>
+  <div class="note">The band-swelling button. Long enough on cooldown that using it is a real read of the fight rather than a rotation step, and it does not interrupt a composition — a Bard can hold their floor and still swell.</div>
+
+  <div class="ability">
+    <div class="nm">Serenade</div>
+    <ul>
+      <li>Channel a single song directly at one target for 6 seconds, delivering its effect <strong>once per second</strong> instead of once per tick.</li>
+      <li>Choosing to Serenade breaks any composition in progress.</li>
+      <li>Usable once per fight.</li>
+    </ul>
+  </div>
+  <div class="note">Six ticks in six seconds is roughly triple a song's normal rate, aimed at one ally or enemy. It's the Bard's answer to a moment that a spread-out group aura can't solve, and its cost is total: you stop performing for everyone else, and you give up your composition to do it.</div>
+</section>
+
+<section id="rebalance">
+  <div class="eyebrow">Rebalancing</div>
+  <h2>Costs, charm, and the weapon hand</h2>
+
+  <h4>Shouts</h4>
+  <p>Mana costs on shouts are <strong>reduced</strong>, and shouts can now be strengthened with Amplify. They were priced as though they were rare emergency tools while functioning as ordinary utility; this brings the cost in line with the use, and gives Amplify a second home outside of songs.</p>
+
+  <h4>Charm</h4>
+  <p>Charm's mana cost is <strong>increased significantly</strong>. This is the proposal's most direct implementation of a goal the class page already states — charm should be a situational crowd-control tool, not a sustained rotation. Raising the cost rather than nerfing the effect keeps charm powerful and dramatic when a Bard chooses to spend on it, while making it impossible to run all day.</p>
+
+  <h4>Mesmerize</h4>
+  <p>Mez's mana cost is <strong>increased moderately</strong>. Same reasoning, applied with a lighter hand — mez is a legitimate part of pulling and emergency control and shouldn't be priced out of that role, only out of being free.</p>
+
+  <h4>Double Attack</h4>
+  <p><strong>Dual wield is replaced with double attack.</strong> A Bard fighting between verses should be landing occasional meaningful strikes, not managing an off-hand. Double attack keeps the melee contribution real while removing a gearing puzzle that pulled attention away from the performance — which is where a Bard's attention should be.</p>
+</section>
+
+<div class="stave"><i></i><i></i><i></i><i></i><i></i><b>&#9839;</b></div>
+
+<section id="try">
+  <div class="eyebrow">See it move</div>
+  <h2>Two working models</h2>
+  <p>Everything above has been built and tested rather than only written down. The battle simulator runs a level-40 fight against an orc with a warrior and a druid; with no Bard involvement the fight takes about 90 seconds, and every song's contribution is measured against that baseline.</p>
+  <div class="try">
+    <p style="margin:0; color:var(--parch)">Build a rotation and watch four instruments play it out side by side, or take a Bard into a live fight and break the composition yourself when it gets loud.</p>
+    <div class="btnrow">
+      <a class="btn solid" href="./bard-battle-sim.html">Play the battle simulator &rarr;</a>
+      <a class="btn" href="./bard-song-modeler.html">Open the song modeler &rarr;</a>
+      <a class="btn" href="./index.html">Read the full proposal &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<section id="close">
+  <div class="eyebrow">Closing</div>
+  <h2>Why any of this</h2>
+  <p>The Bard is the class most likely to be described by how tiring it is to play. That reputation is earned, and it hides the good part: no other class asks you to hold a whole fight's worth of small decisions in your head at once.</p>
+  <p>This proposal tries to protect that and remove the tax on it. Instruments give you an identity instead of a lookup table. Resonance rewards commitment in one place instead of everywhere. Compositions let you hand a floor to the system and spend your attention on the fight — and let you sign your name to something another Bard might carry for years.</p>
+  <p>Thanks for reading. Feedback, disagreement, and better numbers are all extremely welcome — that's the entire point of posting it.</p>
+</section>
+
+<footer>
+  <p><strong style="color:var(--muted)">Unofficial fan proposal.</strong> Monsters &amp; Memories is developed by Niche Worlds Cult. This document is not affiliated with, endorsed by, or produced by the development team, and describes no actual or planned game content.</p>
+  <p>Written by Dayn for the Monsters &amp; Memories community · <a href="./index.html">Re-strung</a></p>
+</footer>
+
+</div>
+</body>
+</html>
