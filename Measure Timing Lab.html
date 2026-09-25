@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Measure Timing Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4eff5; --panel:#fffbff; --panel2:#ebe2ee; --line:#d6c8da; --ink:#2a1f2d; --muted:#6d5f71;
+  --brass:#8f6512; --brass-soft:#e9d6a8; --buff:#2f8a5a; --charm:#6b44c2; --gap:#c4452a; --idle:#a596a8;
+  --serif:"Fraunces",Georgia,"Times New Roman",serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --bg:#231a26; --panel:#2e2332; --panel2:#3a2d3f; --line:#4d3e52; --ink:#f1e9dd; --muted:#b7a8b9;
+  --brass:#d9a94a; --brass-soft:#5a4520; --buff:#7fcf9f; --charm:#b995f5; --gap:#f07a5f; --idle:#7c6c80; } }
+:root[data-theme="dark"]{
+  --bg:#231a26; --panel:#2e2332; --panel2:#3a2d3f; --line:#4d3e52; --ink:#f1e9dd; --muted:#b7a8b9;
+  --brass:#d9a94a; --brass-soft:#5a4520; --buff:#7fcf9f; --charm:#b995f5; --gap:#f07a5f; --idle:#7c6c80; }
+:root{ box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+html{ scroll-padding-top:env(safe-area-inset-top,0px); }
+*,*::before,*::after{ box-sizing:inherit; }
+body{ margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; font-variant-numeric:tabular-nums; }
+.wrap{ max-width:1080px; margin:0 auto; padding:22px 18px 60px; }
+h1{ font-family:var(--serif); font-weight:700; font-size:clamp(30px,5vw,44px); line-height:1.05; margin:0; letter-spacing:-.01em; }
+.lede{ color:var(--muted); max-width:62ch; margin:8px 0 0; }
+h2{ font-family:var(--serif); font-weight:500; font-size:22px; margin:0 0 6px; }
+h3{ font-family:var(--serif); font-weight:500; font-size:17px; margin:0 0 6px; }
+p{ margin:0 0 10px; }
+.muted{ color:var(--muted); }
+.small{ font-size:13px; }
+button,select,input{ font:inherit; color:inherit; }
+button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{ outline:2px solid var(--brass); outline-offset:2px; }
+
+/* tabs */
+.tabs{ display:flex; gap:4px; margin:22px 0 18px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+.tab{ background:none; border:0; border-bottom:3px solid transparent; padding:9px 14px 8px; cursor:pointer; color:var(--muted); font-size:15px; margin-bottom:-1px; }
+.tab[aria-selected="true"]{ color:var(--ink); border-bottom-color:var(--brass); font-weight:600; }
+.pane{ display:none; } .pane.on{ display:block; }
+
+.card{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px 18px; }
+.grid2{ display:grid; grid-template-columns:320px 1fr; gap:18px; align-items:start; }
+@media (max-width:860px){ .grid2{ grid-template-columns:1fr; } }
+.field{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 0 9px; }
+.field label{ color:var(--muted); font-size:14px; }
+.field select,.field input[type=number],.field input[type=text]{ background:var(--panel2); border:1px solid var(--line); border-radius:6px; padding:5px 8px; min-width:120px; }
+.field input[type=range]{ width:130px; accent-color:var(--brass); }
+.check{ display:flex; gap:8px; align-items:flex-start; margin:0 0 9px; font-size:14px; }
+.check input{ accent-color:var(--brass); margin-top:4px; }
+.btn{ background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:9px 14px; cursor:pointer; }
+.btn:hover{ border-color:var(--brass); }
+.btn.big{ font-size:18px; padding:16px 18px; font-weight:600; border-radius:12px; min-height:64px; }
+.btn.fade{ background:color-mix(in srgb,var(--gap) 18%,var(--panel)); border-color:var(--gap); }
+.btn.land{ background:color-mix(in srgb,var(--charm) 18%,var(--panel)); border-color:var(--charm); }
+.btn.on{ background:var(--brass); color:#1f1405; border-color:var(--brass); }
+.row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+#loopbar{ display:block; width:100%; height:214px; }
+.loophead{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
+#loopNow{ margin:6px 0 0; min-height:1.5em; }
+/* live dial: the one bold element */
+.live{ display:grid; grid-template-columns:minmax(260px,380px) 1fr; gap:22px; align-items:start; }
+@media (max-width:760px){ .live{ grid-template-columns:1fr; } }
+.dialbox{ position:relative; aspect-ratio:1; max-width:380px; width:100%; margin:0 auto; }
+#dial{ width:100%; height:100%; display:block; }
+.dialtext{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; text-align:center; padding:0 18%; }
+.dialtext .n{ font-family:var(--serif); font-weight:700; font-size:clamp(46px,11vw,76px); line-height:1; }
+.dialtext .n span{ display:inline-block; text-align:center; }
+.dialtext .n .d{ width:.62em; } .dialtext .n .p{ width:.3em; }
+.dialtext .s{ color:var(--muted); font-size:14px; margin-top:6px; }
+.bigbtns{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+kbd{ font-family:var(--sans); font-size:12px; border:1px solid var(--line); border-bottom-width:2px; border-radius:4px; padding:0 5px; color:var(--muted); }
+
+table{ width:100%; border-collapse:collapse; font-size:14px; }
+th,td{ text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); }
+th{ color:var(--muted); font-weight:600; font-size:13px; }
+td.num,th.num{ text-align:right; }
+.scroll{ overflow-x:auto; }
+.fit-yes{ color:var(--buff); font-weight:600; } .fit-no{ color:var(--gap); font-weight:600; }
+textarea{ width:100%; min-height:90px; background:var(--panel2); border:1px solid var(--line); border-radius:6px; padding:8px; font:13px/1.4 ui-monospace,Menlo,Consolas,monospace; color:var(--ink); }
+
+/* timeline */
+.tlbox{ overflow-x:auto; }
+#timeline{ display:block; width:100%; min-width:640px; height:auto; }
+.legend{ display:flex; gap:14px; flex-wrap:wrap; font-size:13px; color:var(--muted); margin-top:8px; }
+.sw{ display:inline-block; width:12px; height:12px; border-radius:3px; vertical-align:-2px; margin-right:5px; }
+
+.hyp{ border-left:3px solid var(--brass); padding:4px 0 4px 14px; margin:0 0 14px; }
+details.test{ border:1px solid var(--line); border-radius:10px; background:var(--panel); padding:12px 16px; margin:0 0 10px; }
+details.test summary{ cursor:pointer; display:flex; gap:10px; align-items:baseline; list-style:none; }
+details.test summary::-webkit-details-marker{ display:none; }
+details.test summary input{ accent-color:var(--brass); transform:translateY(2px); }
+details.test .q{ font-weight:600; }
+details.test .body{ margin-top:10px; padding-left:26px; font-size:14px; }
+details.test .body b{ font-weight:600; }
+.pri{ font-size:12px; color:var(--brass); margin-left:auto; white-space:nowrap; }
+@media (prefers-reduced-motion:reduce){ *{ transition:none!important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Measure timing lab</h1>
+    <p class="lede">Figure out how the Bard Measure schedules a charmed pet's recharm. Time it live while you play, compare your numbers against two possible models, and work through the tests that would settle it.</p>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-pane="p-live">Live timer</button>
+    <button class="tab" role="tab" aria-selected="false" data-pane="p-model">Model the Measure</button>
+    <button class="tab" role="tab" aria-selected="false" data-pane="p-tests">Test plan</button>
+  </nav>
+
+  <!-- LIVE -->
+  <section class="pane on" id="p-live" role="tabpanel">
+    <div class="card" style="margin-bottom:18px">
+      <div class="loophead">
+        <h2 style="margin:0">Measure loop</h2>
+        <div class="row"><button class="btn on" id="bWin">Start window</button><button class="btn" id="bWinStop">Stop</button></div>
+      </div>
+      <canvas id="loopbar" aria-label="Predicted Measure loop across the charm window"></canvas>
+      <p class="small" id="loopNow"></p>
+      <p class="small muted" style="margin:4px 0 0">The top row is the next 18 seconds and the middle row is now. When the playhead reaches 18, the next row drops down and a new one appears. Each block is one 3 second cast; the dashed charm block is charm's turn arriving while the pet is still held, which still costs the beat in the best fit model. The tiles underneath are the Measure itself: each one flashes when its cast lands, then fills with grey as its 18 seconds run down. Press Start window or Charm landed to begin at 0; a red mark shows where you tapped Charm faded.</p>
+    </div>
+    <div class="live">
+      <div>
+        <div class="dialbox">
+          <canvas id="dial" width="760" height="760" aria-label="Charm timer"></canvas>
+          <div class="dialtext"><div class="n" id="dialN">ready</div><div class="s" id="dialS">Tap Charm landed when your charm hits the pet</div></div>
+        </div>
+        <div class="bigbtns">
+          <button class="btn big fade" id="bFade">Charm faded <kbd>F</kbd></button>
+          <button class="btn big land" id="bLand">Charm landed <kbd>L</kbd></button>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" id="bMetro">Beat off</button>
+          <button class="btn" id="bSync">Sync beat to now</button>
+          <button class="btn" id="bMute">Sound on</button>
+        </div>
+        <p class="small muted" style="margin-top:8px">The beat clicks every 3 seconds with a stronger click every 6. Press Sync the moment you see a server tick in game, such as a mana regen tick, so the clicks line up with it.</p>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:14px">
+          <h2>This run</h2>
+          <div class="field"><label for="lBuffs">Buffs in Measure with charm</label>
+            <select id="lBuffs"><option value="0">0 (charm only)</option><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option></select></div>
+          <div class="field"><label for="lDur">Charm duration (s)</label><input type="number" id="lDur" value="18" min="1" max="120" step="1"></div>
+          <div class="field"><label for="lCast">Song cast time (s)</label><input type="number" id="lCast" value="3" min="0.5" max="10" step="0.5"></div>
+          <div class="field"><label for="n1">Measure song 1</label><input type="text" id="n1" maxlength="24" placeholder="Song 1"></div>
+          <div class="field"><label for="n2">Measure song 2</label><input type="text" id="n2" maxlength="24" placeholder="Song 2"></div>
+          <div class="field"><label for="n3">Measure song 3</label><input type="text" id="n3" maxlength="24" placeholder="Song 3"></div>
+          <p class="small" id="loopNote" style="margin:0 0 10px"></p>
+          <div class="check"><input type="checkbox" id="lCue" checked><label for="lCue">Chime when a hand-cast charm would need to start to land exactly as the old one fades</label></div>
+          <p class="small muted">Workflow: press <b>Charm faded</b> when you see the charm break message, then <b>Charm landed</b> when the pet is yours again. Each pair is logged as one recharm gap for the buff count above.</p>
+        </div>
+        <div class="card">
+          <div class="row" style="justify-content:space-between"><h2 style="margin:0">Your log</h2>
+            <div class="row"><button class="btn" id="bUndo">Undo last</button><button class="btn" id="bClear">Clear log</button></div></div>
+          <div class="scroll" style="margin-top:8px"><table id="sumTable"></table></div>
+          <p class="small muted" id="fitNote" style="margin-top:8px"></p>
+          <details style="margin-top:8px"><summary class="small">Every entry and a copyable CSV</summary>
+            <div class="scroll" style="margin-top:8px"><table id="logTable"></table></div>
+            <textarea id="csv" readonly aria-label="CSV of logged gaps" style="margin-top:8px"></textarea>
+          </details>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODEL -->
+  <section class="pane" id="p-model" role="tabpanel">
+    <div class="hyp">
+      <h2>Two ways the Measure could work</h2>
+      <p><b>Round robin.</b> The Measure walks its slots in a fixed loop, one 3 second cast per slot. While the pet is still charmed, charm's slot is passed over. When the charm breaks, it waits until the loop comes back around to it, so the gap depends on where in the loop the break happened. More buffs means a longer loop and a longer worst case.</p>
+      <p><b>Refresh when low.</b> The Measure only recasts a song when it is nearly out, and a broken charm joins the line immediately. Long gaps only happen when several buffs come due at the same moment and charm has to wait behind them.</p>
+      <p><b>Best fit so far:</b> round robin where charm's slot still costs its 3 second beat, plus a small chance the charm breaks early. It is the only setup that reproduces all three of your results: under 3 seconds to the cast starting with charm alone, up to about 12 with 2 buffs, and anywhere from about 3 to 15 with 3 buffs. Those are the defaults below. Refresh when low can't produce anything past about 12, so your 16 second gap argues against it.</p>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>Settings</h3>
+        <div class="field"><label for="mModel">Model</label><select id="mModel"><option value="rr">Round robin</option><option value="lazy">Refresh when low</option></select></div>
+        <div class="field"><label for="mBuffs">Buffs with charm</label><select id="mBuffs"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option></select></div>
+        <div class="field"><label for="mDur">Charm duration (s)</label><input type="number" id="mDur" value="18" min="3" max="120"></div>
+        <div class="field"><label for="mSong">Buff duration (s)</label><input type="number" id="mSong" value="18" min="3" max="120"></div>
+        <div class="field"><label for="mCast">Cast time (s)</label><input type="number" id="mCast" value="3" min="0.5" max="10" step="0.5"></div>
+        <div class="field"><label for="mTh">Refresh when under (s)</label><input type="number" id="mTh" value="3" min="0" max="18" step="0.5"></div>
+        <div class="field"><label for="mBreak">Early break chance per tick</label><input type="range" id="mBreak" min="0" max="40" value="10"><span id="mBreakV" class="small">10%</span></div>
+        <div class="check"><input type="checkbox" id="mSkip" checked><label for="mSkip">Charm's slot still costs a 3 second beat while the pet is charmed</label></div>
+        <div class="check"><input type="checkbox" id="mTick"><label for="mTick">The game only notices the charm broke on the next 6 second server tick</label></div>
+        <div class="field"><label for="mSeed">Example fight</label><input type="range" id="mSeed" min="1" max="60" value="7"></div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:14px">
+          <h3>One example fight, 30 to 90 seconds in</h3>
+          <div class="tlbox"><canvas id="timeline" width="960" height="300" aria-label="Timeline of songs and charm"></canvas></div>
+          <div class="legend">
+            <span><i class="sw" style="background:var(--buff)"></i>Buff active</span>
+            <span><i class="sw" style="background:var(--charm)"></i>Pet charmed</span>
+            <span><i class="sw" style="background:var(--gap)"></i>Pet loose, with seconds until recharm lands</span>
+            <span><i class="sw" style="background:var(--brass)"></i>Bard singing</span>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Predicted recharm gaps against what you saw</h3>
+          <p class="small muted">Seconds from the charm fading to the new charm landing, over 120 simulated fights per row. Uses the settings on the left for everything except the model and buff count.</p>
+          <div class="scroll"><table id="cmpTable"></table></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTS -->
+  <section class="pane" id="p-tests" role="tabpanel">
+    <p class="lede" style="margin-bottom:16px">Tick each test off as you run it. The first three do the most work: together they tell the two models apart and pin down the numbers the simulator needs.</p>
+    <div id="tests"></div>
+  </section>
+</div>
+
+<script>
+"use strict";
+/* ---------- storage ---------- */
+const KEY="measureLab.v1";
+let store={logs:[],checks:{},names:{}};
+try{ const raw=localStorage.getItem(KEY); if(raw){ const s=JSON.parse(raw); if(s&&Array.isArray(s.logs)) store={logs:s.logs,checks:s.checks||{},names:s.names||{}}; } }catch(e){}
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(store)); }catch(e){} }
+const $=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* ---------- tabs ---------- */
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected",x===t?"true":"false"));
+  document.querySelectorAll(".pane").forEach(p=>p.classList.toggle("on",p.id===t.dataset.pane));
+  if(t.dataset.pane==="p-model") renderModel();
+}));
+
+/* ---------- simulation ---------- */
+function rng32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const DT=0.05, TICK=6, WARM=30;
+function simulate(cfg,seed,T){
+  const r=rng32(seed), c=cfg.cast, D=cfg.charmDur, SD=cfg.songDur;
+  const entries=[]; for(let i=0;i<cfg.buffs;i++) entries.push({kind:"buff",id:i,exp:-1,spans:[]});
+  entries.push({kind:"charm"});
+  let ptr=Math.floor(r()*entries.length), t=0, busyUntil=r()*c, casting=null;
+  let nextTick=r()*TICK, charmOn=false, charmEnd=0, seen=true, fadeAt=0, landAt=0;
+  let pending={fade:0,start:null};
+  const casts=[], gaps=[], charmSpans=[], ticks=[];
+  function choose(){
+    if(cfg.model==="rr"){
+      for(let k=0;k<entries.length;k++){
+        const e=entries[ptr]; ptr=(ptr+1)%entries.length;
+        if(e.kind==="buff") return e;
+        if(!charmOn&&seen) return e;
+        if(cfg.skipCosts) return {kind:"idle"};
+      }
+      return null;
+    }
+    let best=null,key=Infinity;
+    for(const e of entries){
+      if(e.kind==="buff"){ if(e.exp-t<=cfg.th&&e.exp<key){best=e;key=e.exp;} }
+      else if(!charmOn&&seen&&fadeAt<key){best=e;key=fadeAt;}
+    }
+    return best;
+  }
+  while(t<T){
+    if(t>=nextTick){ ticks.push(nextTick);
+      if(charmOn&&r()<cfg.breakP) charmEnd=t;
+      if(!charmOn&&!seen) seen=true;
+      nextTick+=TICK; }
+    if(charmOn&&t>=charmEnd){ charmOn=false; fadeAt=charmEnd; seen=!cfg.tickDetect; charmSpans.push([landAt,charmEnd]); pending={fade:fadeAt,start:null}; }
+    if(casting&&t>=busyUntil){
+      if(casting.kind==="buff"){ casting.spans.push([t,t+SD]); casting.exp=t+SD; }
+      else if(casting.kind==="charm"){ charmOn=true; landAt=t; charmEnd=t+D;
+        if(pending&&pending.start!==null) gaps.push({fade:pending.fade,start:pending.start,land:t}); pending=null; }
+      casting=null;
+    }
+    if(!casting&&t>=busyUntil){
+      const p=choose();
+      if(p){ casting=p; busyUntil=t+c; casts.push({kind:p.kind,id:p.id,start:t,end:t+c});
+        if(p.kind==="charm"&&pending&&pending.start===null) pending.start=t; }
+    }
+    t+=DT;
+  }
+  if(charmOn) charmSpans.push([landAt,Math.max(landAt,T)]);
+  return {casts,gaps,charmSpans,entries,ticks};
+}
+function summarize(a){ if(!a.length) return null; a=a.slice().sort((x,y)=>x-y);
+  const q=p=>a[Math.min(a.length-1,Math.round(p*(a.length-1)))];
+  return {n:a.length,min:a[0],med:q(.5),p90:q(.9),max:a[a.length-1]}; }
+function predict(cfg,runs){
+  const land=[]; for(let i=0;i<runs;i++){ const s=simulate(cfg,1009+i*7919,240);
+    for(const g of s.gaps) if(g.fade>=WARM) land.push(g.land-g.fade); }
+  return summarize(land);
+}
+
+/* ---------- model tab ---------- */
+function readCfg(){
+  return { model:$("mModel").value, buffs:+$("mBuffs").value, charmDur:+$("mDur").value||18, songDur:+$("mSong").value||18,
+    cast:+$("mCast").value||3, th:+$("mTh").value, breakP:+$("mBreak").value/100, skipCosts:$("mSkip").checked, tickDetect:$("mTick").checked };
+}
+const OBS={0:"under 3 (probably to cast start)",1:"not tested",2:"up to about 11",3:"about 3 to about 16"};
+let modelTimer=null;
+function renderModel(){ clearTimeout(modelTimer); modelTimer=setTimeout(()=>{ drawTimeline(); drawCompare(); },60); }
+["mModel","mBuffs","mDur","mSong","mCast","mTh","mBreak","mSkip","mTick","mSeed"].forEach(id=>$(id).addEventListener("input",()=>{ $("mBreakV").textContent=$("mBreak").value+"%"; renderModel(); }));
+
+function drawTimeline(){
+  const cfg=readCfg(), s=simulate(cfg,+$("mSeed").value*31+3,95);
+  const cv=$("timeline"), ctx=cv.getContext("2d"), dpr=window.devicePixelRatio||1;
+  const lanes=cfg.buffs+2, laneH=34, top=26, W=960, H=top+lanes*laneH+22;
+  cv.width=W*dpr; cv.height=H*dpr; cv.style.aspectRatio=W+"/"+H; ctx.setTransform(dpr,0,0,dpr,0,0);
+  const x0=112, x1=W-12, t0=30, t1=90, X=t=>x0+(t-t0)/(t1-t0)*(x1-x0);
+  const C={ink:css("--ink"),muted:css("--muted"),line:css("--line"),buff:css("--buff"),charm:css("--charm"),gap:css("--gap"),brass:css("--brass"),idle:css("--idle")};
+  ctx.clearRect(0,0,W,H); ctx.font="13px system-ui,sans-serif"; ctx.textBaseline="middle";
+  // staff lines + beat grid
+  for(let t=t0;t<=t1;t+=3){ const x=X(t); ctx.strokeStyle=C.line; ctx.lineWidth=(t%6===0)?1.2:.5; ctx.globalAlpha=(t%6===0)?.9:.5;
+    ctx.beginPath(); ctx.moveTo(x,top-6); ctx.lineTo(x,top+lanes*laneH); ctx.stroke(); ctx.globalAlpha=1;
+    if(t%6===0){ ctx.fillStyle=C.muted; ctx.textAlign="center"; ctx.fillText(t+"s",x,H-10); } }
+  for(const tk of s.ticks){ if(tk<t0||tk>t1) continue; const x=X(tk); ctx.fillStyle=C.brass; ctx.globalAlpha=.8;
+    ctx.beginPath(); ctx.moveTo(x-4,top-12); ctx.lineTo(x+4,top-12); ctx.lineTo(x,top-5); ctx.fill(); ctx.globalAlpha=1; }
+  ctx.textAlign="left"; ctx.fillStyle=C.muted; ctx.fillText("server tick",4,top-9);
+  const laneY=i=>top+i*laneH;
+  const labels=["Bard sings"]; for(let i=0;i<cfg.buffs;i++) labels.push("Buff "+(i+1)); labels.push("Charm");
+  labels.forEach((l,i)=>{ ctx.fillStyle=C.ink; ctx.textAlign="left"; ctx.fillText(l,4,laneY(i)+laneH/2); });
+  const bar=(a,b,y,col,alpha)=>{ a=Math.max(a,t0); b=Math.min(b,t1); if(b<=a) return; ctx.globalAlpha=alpha||1; ctx.fillStyle=col;
+    ctx.fillRect(X(a),y+7,X(b)-X(a),laneH-14); ctx.globalAlpha=1; };
+  for(const k of s.casts){ const col=k.kind==="charm"?C.charm:(k.kind==="idle"?C.idle:C.brass);
+    bar(k.start,k.end-.12,laneY(0),col,k.kind==="idle"?.5:.95);
+    const a=Math.max(k.start,t0), b=Math.min(k.end,t1); if(b-a>1.4){ ctx.fillStyle="#1f1405"; ctx.textAlign="center";
+      ctx.fillText(k.kind==="charm"?"C":(k.kind==="idle"?"":"B"+(k.id+1)),(X(a)+X(b))/2,laneY(0)+laneH/2); } }
+  s.entries.filter(e=>e.kind==="buff").forEach((e,i)=>{ for(const sp of e.spans) bar(sp[0],sp[1],laneY(i+1),C.buff,.75); });
+  const cy=laneY(cfg.buffs+1);
+  for(const sp of s.charmSpans) bar(sp[0],sp[1],cy,C.charm,.85);
+  for(const g of s.gaps){ bar(g.fade,g.land,cy,C.gap,.9);
+    const a=Math.max(g.fade,t0), b=Math.min(g.land,t1); if(b>a){ ctx.fillStyle=C.gap; ctx.textAlign="center";
+      ctx.font="600 13px system-ui,sans-serif"; ctx.fillText((g.land-g.fade).toFixed(1)+"s",(X(a)+X(b))/2,cy+laneH+4); ctx.font="13px system-ui,sans-serif"; } }
+}
+function fmt(s){ return s?`${s.min.toFixed(1)} to ${s.max.toFixed(1)} (typical ${s.med.toFixed(1)})`:"no recharms"; }
+function drawCompare(){
+  const base=readCfg(); let html="<thead><tr><th>Buffs with charm</th><th>Round robin</th><th>Refresh when low</th><th>You saw</th></tr></thead><tbody>";
+  for(let b=0;b<=3;b++){ const rr=predict({...base,model:"rr",buffs:b},120), lz=predict({...base,model:"lazy",buffs:b},120);
+    html+=`<tr><td>${b===0?"0, charm only":b}</td><td>${fmt(rr)}</td><td>${fmt(lz)}</td><td>${OBS[b]}</td></tr>`; }
+  $("cmpTable").innerHTML=html+"</tbody>";
+}
+
+/* ---------- live tab ---------- */
+let audio=null, soundOn=true;
+function beep(freq,dur,vol){ if(!soundOn) return; try{ if(!audio) audio=new (window.AudioContext||window.webkitAudioContext)();
+  if(audio.state==="suspended") audio.resume(); const o=audio.createOscillator(), g=audio.createGain(), t=audio.currentTime;
+  o.frequency.value=freq; o.type="sine"; g.gain.setValueAtTime(vol||.12,t); g.gain.exponentialRampToValueAtTime(.0005,t+dur);
+  o.connect(g).connect(audio.destination); o.start(t); o.stop(t+dur+.02); }catch(e){} }
+let live={phase:"idle", landAt:0, fadeAt:0, cued:false, faded:false};
+let metro={on:false, origin:0, last:-1};
+const now=()=>performance.now()/1000;
+
+function onFade(){ const t=now();
+  live={phase:"loose", landAt:live.landAt, fadeAt:t, cued:true, faded:true};
+  if(bar.running) bar.fadeMark=t-bar.origin;
+  beep(330,.18,.14); }
+function onLand(){ const t=now();
+  if(live.phase==="loose"){ const gap=t-live.fadeAt;
+    store.logs.push({buffs:+$("lBuffs").value, gap:+gap.toFixed(2), at:new Date().toISOString()}); save(); renderLog(); }
+  live={phase:"charmed", landAt:t, fadeAt:0, cued:false, faded:false};
+  startWindow();
+  beep(660,.12,.12); }
+$("bFade").addEventListener("click",onFade);
+$("bLand").addEventListener("click",onLand);
+document.addEventListener("keydown",e=>{ if(e.target.matches("input,select,textarea")) return;
+  if(e.key==="f"||e.key==="F"){ e.preventDefault(); onFade(); }
+  if(e.key==="l"||e.key==="L"){ e.preventDefault(); onLand(); } });
+$("bMetro").addEventListener("click",()=>{ metro.on=!metro.on; if(metro.on&&!metro.origin) metro.origin=now();
+  $("bMetro").textContent=metro.on?"Beat on":"Beat off"; $("bMetro").classList.toggle("on",metro.on); beep(1,.01,.0001); });
+$("bSync").addEventListener("click",()=>{ metro.origin=now(); metro.last=-1; beep(880,.08,.12); });
+$("bMute").addEventListener("click",()=>{ soundOn=!soundOn; $("bMute").textContent=soundOn?"Sound on":"Sound off"; });
+
+let lastNum="";
+function setNum(t){ if(t===lastNum) return; lastNum=t; const el=$("dialN");
+  if(!/[0-9]/.test(t)){ el.textContent=t; return; }
+  el.innerHTML=[...t].map(ch=>`<span class="${ch==="."?"p":"d"}">${ch}</span>`).join(""); }
+function drawDial(){
+  const cv=$("dial"), ctx=cv.getContext("2d"), S=cv.width, cx=S/2, cy=S/2, R=S*0.42;
+  const C={line:css("--line"),charm:css("--charm"),gap:css("--gap"),brass:css("--brass"),muted:css("--muted"),panel:css("--panel")};
+  ctx.clearRect(0,0,S,S);
+  const D=+$("lDur").value||18, cast=+$("lCast").value||3, t=now();
+  // track
+  ctx.lineWidth=S*0.045; ctx.strokeStyle=C.line; ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.stroke();
+  // beat marks every cast-time around the charm duration
+  for(let s=0;s<D;s+=cast){ const a=-Math.PI/2+s/D*Math.PI*2; const r1=R+S*0.045, r2=R+S*0.07;
+    ctx.strokeStyle=C.muted; ctx.lineWidth=S*(s%(cast*2)===0?0.008:0.004);
+    ctx.beginPath(); ctx.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1); ctx.lineTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2); ctx.stroke(); }
+  // hand-cast cue mark at D - cast
+  if($("lCue").checked&&D>cast){ const a=-Math.PI/2+(D-cast)/D*Math.PI*2; ctx.fillStyle=C.brass;
+    ctx.beginPath(); ctx.arc(cx+Math.cos(a)*R,cy+Math.sin(a)*R,S*0.022,0,Math.PI*2); ctx.fill(); }
+  let n="ready", s="Tap Charm landed when your charm hits the pet";
+  if(live.phase==="charmed"){ const el=t-live.landAt, left=D-el; const frac=Math.min(1,el/D);
+    ctx.lineWidth=S*0.045; ctx.lineCap="round"; ctx.strokeStyle=left<cast?C.gap:C.charm;
+    ctx.beginPath(); ctx.arc(cx,cy,R,-Math.PI/2,-Math.PI/2+frac*Math.PI*2); ctx.stroke(); ctx.lineCap="butt";
+    if(!live.cued&&$("lCue").checked&&left<=cast){ live.cued=true; beep(988,.14,.14); setTimeout(()=>beep(988,.14,.14),180); }
+    if(left>0){ n=left.toFixed(1).padStart(4,"\u2007"); s=left<=cast?"a hand-cast charm started now lands on time":"seconds until this charm should fade"; }
+    else { n=("+"+(-left).toFixed(1)).padStart(4,"\u2007"); s="past the expected fade. Tap Charm faded when it breaks"; }
+  } else if(live.phase==="loose"){ const el=t-live.fadeAt; const frac=(el%D)/D;
+    ctx.lineWidth=S*0.045; ctx.strokeStyle=C.gap; ctx.beginPath(); ctx.arc(cx,cy,R,-Math.PI/2,-Math.PI/2+frac*Math.PI*2); ctx.stroke();
+    n=el.toFixed(1).padStart(4,"\u2007"); s="seconds the pet has been loose"; }
+  setNum(n); $("dialS").textContent=s;
+  // metronome
+  if(metro.on){ const k=Math.floor((t-metro.origin)/3); if(k!==metro.last&&t>=metro.origin){ metro.last=k; beep(k%2===0?880:520,.06,k%2===0?.13:.08); }
+    const ph=((t-metro.origin)%3)/3; const a=-Math.PI/2+ph*Math.PI*2; ctx.fillStyle=C.brass;
+    ctx.beginPath(); ctx.arc(cx+Math.cos(a)*(R-S*0.07),cy+Math.sin(a)*(R-S*0.07),S*0.014,0,Math.PI*2); ctx.fill(); }
+  drawLoop();
+  requestAnimationFrame(drawDial);
+}
+
+/* ---------- measure loop bar ---------- */
+const WIN=18;
+const reduceMotion=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const bar={running:false, origin:0, fadeMark:null, lastWin:null, dropT0:-1};
+function loopCfg(){ const b=+$("lBuffs").value, c=+$("lCast").value||3, D=+$("lDur").value||18;
+  const names=[1,2,3].slice(0,b).map(i=>($("n"+i).value.trim()||("Song "+i)));
+  return {b,c,D,SD:18,names,L:(b+1)*c}; }
+/* deterministic best-fit loop: fixed order, one cast per beat, charm's turn costs a beat even while held */
+function buildTimeline(g,horizon,fadeMark){
+  const slots=[], applies=[...Array(g.b)].map(()=>[]);
+  const endOf=land=>{ const nat=land+g.D; return (fadeMark!==null&&fadeMark>land&&fadeMark<nat)?fadeMark:nat; };
+  const charms=[{land:0,end:endOf(0)}];
+  for(let i=0;i<g.b;i++) applies[i].push((i+1)*g.c-g.L);          // steady state: cast one loop ago
+  for(let k=0;k*g.c<horizon;k++){
+    const st=k*g.c, en=st+g.c, idx=k%(g.b+1);
+    if(idx<g.b){ slots.push({s:st,e:en,idx,kind:"buff"}); applies[idx].push(en); }
+    else { const ch=charms[charms.length-1];
+      if(st<ch.end) slots.push({s:st,e:en,idx,kind:"held"});
+      else { slots.push({s:st,e:en,idx,kind:"recharm"}); charms.push({land:en,end:endOf(en)}); } }
+  }
+  return {slots,applies,charms};
+}
+function startWindow(){ bar.running=true; bar.origin=now(); bar.fadeMark=null; bar.lastWin=null; bar.dropT0=-1; }
+$("bWin").addEventListener("click",startWindow);
+$("bWinStop").addEventListener("click",()=>{ bar.running=false; bar.fadeMark=null; });
+[1,2,3].forEach(i=>{ const el=$("n"+i); el.value=store.names["n"+i]||"";
+  el.addEventListener("input",()=>{ store.names["n"+i]=el.value; save(); }); });
+function fitText(ctx,t,w){ if(w<8) return ""; if(ctx.measureText(t).width<=w) return t; while(t.length>1&&ctx.measureText(t+"…").width>w) t=t.slice(0,-1); return t.length>1?t+"…":""; }
+function lastBefore(arr,t){ let a=null; for(const v of arr){ if(v<=t) a=v; else break; } return a; }
+function drawLoop(){
+  const cv=$("loopbar"), ctx=cv.getContext("2d"), dpr=window.devicePixelRatio||1;
+  const W=cv.clientWidth||600, H=214;
+  if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){ cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); }
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+  const C={ink:css("--ink"),muted:css("--muted"),line:css("--line"),charm:css("--charm"),gap:css("--gap"),brass:css("--brass"),idle:css("--idle"),panel2:css("--panel2"),buff:css("--buff")};
+  const g=loopCfg();
+  const t=bar.running?Math.max(0,now()-bar.origin):0;
+  const w=Math.floor(t/WIN), te=t-w*WIN;
+  const tl=buildTimeline(g,(w+3)*WIN,bar.fadeMark);
+  // drop animation when a new 18 second window begins
+  if(bar.running){ if(bar.lastWin!==null&&w!==bar.lastWin&&!reduceMotion) bar.dropT0=performance.now(); bar.lastWin=w; }
+  let p=1; if(bar.dropT0>0){ p=Math.min(1,(performance.now()-bar.dropT0)/480); if(p>=1) bar.dropT0=-1; }
+  const ease=1-Math.pow(1-p,3);
+  const gx=46, x0=gx, x1=W-6, X=tt=>x0+tt/WIN*(x1-x0);
+  const yNext=8, hNext=26, yCur=50, hCur=38;
+  const charmAt=tt=>{ for(const ch of tl.charms) if(tt>=ch.land&&tt<ch.end) return true; return false; };
+
+  function drawRow(win,y,h,alpha,current){
+    const ws=win*WIN, we=ws+WIN;
+    ctx.save(); ctx.globalAlpha=alpha;
+    ctx.fillStyle=C.panel2; ctx.fillRect(x0,y,x1-x0,h);
+    ctx.font=(current?"600 13px":"12px")+" system-ui,sans-serif"; ctx.textBaseline="middle";
+    for(const sl of tl.slots){ if(sl.e<=ws||sl.s>=we) continue;
+      const a=Math.max(sl.s,ws)-ws, b=Math.min(sl.e,we)-ws, xa=X(a)+1.5, xb=X(b)-1.5, bw=xb-xa; if(bw<=0) continue;
+      const col=sl.kind==="buff"?C.brass:C.charm;
+      const played=current&&sl.e<=t, active=current&&t>=sl.s&&t<sl.e;
+      if(sl.kind==="held"){ ctx.globalAlpha=alpha*.3; ctx.fillStyle=col; ctx.fillRect(xa,y,bw,h); ctx.globalAlpha=alpha;
+        ctx.setLineDash([4,3]); ctx.strokeStyle=col; ctx.lineWidth=1.2; ctx.strokeRect(xa+.5,y+.5,bw-1,h-1); ctx.setLineDash([]); }
+      else if(active){ const frac=(t-sl.s)/(sl.e-sl.s);
+        ctx.globalAlpha=alpha*.35; ctx.fillStyle=col; ctx.fillRect(xa,y,bw,h);
+        ctx.globalAlpha=alpha; ctx.fillRect(xa,y,Math.max(0,Math.min(bw,X(t-ws)-xa)),h);
+        ctx.strokeStyle=C.ink; ctx.lineWidth=2; ctx.strokeRect(xa,y,bw,h); }
+      else { ctx.globalAlpha=alpha*(played?.5:(current?.9:.7)); ctx.fillStyle=col; ctx.fillRect(xa,y,bw,h); ctx.globalAlpha=alpha; }
+      const label=sl.kind==="buff"?g.names[sl.idx]:(sl.kind==="held"?"Charm (held)":"Recharm");
+      ctx.fillStyle=sl.kind==="held"?C.ink:"#1f1405"; ctx.textAlign="center"; ctx.fillText(fitText(ctx,label,bw-6),xa+bw/2,y+h/2);
+    }
+    if(current){ // pet strip
+      for(let k=0;k<WIN;k+=0.25){ const on=charmAt(ws+k); ctx.fillStyle=on?C.charm:C.gap; ctx.fillRect(X(k),y+h+3,X(Math.min(WIN,k+.25))-X(k)+.5,4); } }
+    ctx.restore();
+  }
+  // row labels
+  ctx.font="12px system-ui,sans-serif"; ctx.fillStyle=C.muted; ctx.textAlign="left"; ctx.textBaseline="middle";
+  ctx.fillText("Next",4,yNext+hNext/2); ctx.fillText("Now",4,yCur+hCur/2);
+  // animated rows
+  if(p<1){
+    drawRow(w-1,yCur+ease*18,hCur,1-ease,false);                 // old window slides down and fades
+    drawRow(w,yNext+(yCur-yNext)*ease,hNext+(hCur-hNext)*ease,1,ease>.5);  // next row drops into place
+    drawRow(w+1,yNext,hNext,ease*.8,false);                        // new next row fades in
+  } else { drawRow(w+1,yNext,hNext,.8,false); drawRow(w,yCur,hCur,1,true); }
+  // beat grid and labels
+  const gy=yCur+hCur+14;
+  for(let k=0;k<=WIN+1e-9;k+=g.c){ const x=X(k), strong=Math.abs(k%6)<1e-9;
+    ctx.strokeStyle=C.line; ctx.lineWidth=strong?1.4:.7; ctx.beginPath(); ctx.moveTo(x,yCur-3); ctx.lineTo(x,gy-4); ctx.stroke(); }
+  ctx.fillStyle=C.muted; ctx.font="12px system-ui,sans-serif"; ctx.textBaseline="top";
+  [0,6,12,18].forEach(k=>{ ctx.textAlign=k===0?"left":(k===18?"right":"center"); ctx.fillText(k+"s",X(k),gy); });
+  // server tick markers on the current row
+  if(metro.origin&&bar.running){ ctx.fillStyle=C.brass;
+    for(let k=0;k<WIN;k+=0.05){ const abs=bar.origin+w*WIN+k-metro.origin, r=((abs%6)+6)%6;
+      if(r<0.05){ const x=X(k); ctx.beginPath(); ctx.moveTo(x-4,yCur-9); ctx.lineTo(x+4,yCur-9); ctx.lineTo(x,yCur-3); ctx.fill(); } } }
+  // early fade mark
+  if(bar.fadeMark!==null&&bar.fadeMark>=w*WIN&&bar.fadeMark<(w+1)*WIN){ const x=X(bar.fadeMark-w*WIN);
+    ctx.strokeStyle=C.gap; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(x,yCur-4); ctx.lineTo(x,yCur+hCur+8); ctx.stroke(); }
+  // playhead
+  if(bar.running&&p>=1){ const x=X(te); ctx.strokeStyle=C.ink; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x,yCur-6); ctx.lineTo(x,yCur+hCur+8); ctx.stroke();
+    ctx.fillStyle=C.ink; ctx.beginPath(); ctx.arc(x,yCur-6,3.5,0,Math.PI*2); ctx.fill(); }
+
+  // ---- the Measure: one tile per song, flash on landing, grey fills as its duration runs down
+  const tY=gy+26, tH=64, n=g.b+1, tg=8, tw=((x1-4)-(4)-(n-1)*tg)/n;
+  for(let i=0;i<n;i++){ const tx=4+i*(tw+tg), isCharm=i===g.b;
+    let name, frac, col, status, landedAt, dropped=false, loose=false;
+    if(!isCharm){ name=g.names[i]; col=C.brass; landedAt=lastBefore(tl.applies[i],t);
+      const el=t-landedAt; frac=Math.min(1,el/g.SD); dropped=el>=g.SD; status=dropped?"dropped":(g.SD-el).toFixed(1)+"s"; }
+    else { name="Charm"; col=C.charm; let cur=null, last=null;
+      for(const ch of tl.charms){ if(t>=ch.land&&t<ch.end) cur=ch; if(ch.end<=t) last=ch; }
+      if(cur){ landedAt=cur.land; frac=Math.min(1,(t-cur.land)/(cur.end-cur.land)); status=(cur.end-t).toFixed(1)+"s"; }
+      else { loose=true; landedAt=-99; frac=1; const since=last?t-last.end:0; status="loose "+since.toFixed(1)+"s"; } }
+    // tile body
+    ctx.fillStyle=C.panel2; ctx.fillRect(tx,tY,tw,tH);
+    ctx.fillStyle=loose?C.gap:col; ctx.globalAlpha=loose?.8:.95; ctx.fillRect(tx,tY,tw,tH); ctx.globalAlpha=1;
+    // grey drains in from the left as time runs out
+    if(!loose){ ctx.fillStyle=C.idle; ctx.globalAlpha=.85; ctx.fillRect(tx,tY,tw*frac,tH); ctx.globalAlpha=1; }
+    // landing flash
+    const since=bar.running?t-landedAt:99;
+    if(since>=0&&since<0.7&&!loose&&!reduceMotion){ const k=1-since/0.7;
+      ctx.save(); ctx.globalAlpha=k*.65; ctx.fillStyle="#fff7e0"; ctx.fillRect(tx,tY,tw,tH);
+      ctx.globalAlpha=k; ctx.strokeStyle=col; ctx.lineWidth=2+4*k; const pad=6*(1-k); ctx.strokeRect(tx-pad,tY-pad,tw+pad*2,tH+pad*2); ctx.restore(); }
+    if(dropped){ ctx.strokeStyle=C.gap; ctx.lineWidth=2.5; ctx.strokeRect(tx+1,tY+1,tw-2,tH-2); }
+    ctx.fillStyle="#1f1405"; ctx.textBaseline="top"; ctx.textAlign="left"; ctx.font="600 13px system-ui,sans-serif";
+    ctx.fillText(fitText(ctx,name,tw-12),tx+7,tY+8);
+    ctx.font="600 17px system-ui,sans-serif"; ctx.textBaseline="bottom";
+    ctx.fillText(fitText(ctx,status,tw-12),tx+7,tY+tH-7);
+    if(since>=0&&since<1.2&&!loose){ ctx.font="12px system-ui,sans-serif"; ctx.textAlign="right"; ctx.fillText("applied",tx+tw-7,tY+tH-9); }
+  }
+  // readout
+  let msg;
+  if(!bar.running) msg="Press Start window, or tap Charm landed, to start the loop at 0.";
+  else { const sl=tl.slots.find(x=>t>=x.s&&t<x.e);
+    const nowTxt=!sl?"":(sl.kind==="buff"?"casting "+g.names[sl.idx]:(sl.kind==="held"?"charm's turn, pet still held":"recasting charm"));
+    const left=sl?(sl.e-t):0; const nextC=tl.slots.find(x=>x.kind!=="buff"&&x.s>=t);
+    let tail="";
+    if(bar.fadeMark!==null&&t>=bar.fadeMark){ const r=tl.slots.find(x=>x.kind==="recharm"&&x.s>=bar.fadeMark);
+      if(r&&t<r.e) tail=` Early break at ${(bar.fadeMark%WIN).toFixed(1)}s in its cycle. Recharm starts in ${Math.max(0,r.s-t).toFixed(1)}s and lands ${(r.e-bar.fadeMark).toFixed(1)}s after the break.`; }
+    else if(nextC) tail=` Charm's next turn in ${(nextC.s-t).toFixed(1)}s${charmAt(nextC.s)?", pet will still be held":", recharm"}.`;
+    msg=`Cycle ${w+1}, <b>${te.toFixed(1).padStart(4,"\u2007")}s</b> of 18. Now ${nowTxt}, ${left.toFixed(1)}s left in this cast.${tail}`; }
+  $("loopNow").innerHTML=msg;
+}
+function loopNote(){
+  const b=+$("lBuffs").value, D=+$("lDur").value||18, c=+$("lCast").value||3, L=(b+1)*c;
+  const wait=Math.ceil((D+c)/L-1e-9)*L-(D+c);
+  const best=[0,1,2,3].map(x=>{const LL=(x+1)*c;return Math.ceil((D+c)/LL-1e-9)*LL-(D+c);});
+  $("loopNote").innerHTML=`If the charm runs its full ${D} seconds, a ${L} second loop brings charm's turn back <b>${wait.toFixed(1)} seconds</b> after it fades, so the pet lands about ${(wait+c).toFixed(1)} seconds later. By buff count: ${best.map((w,i)=>i+" buffs "+w.toFixed(0)+"s").join(", ")}. Assumes the best fit model on the Model tab.`;
+}
+["lBuffs","lDur","lCast"].forEach(id=>$(id).addEventListener("input",loopNote));
+function renderLog(){
+  const logs=store.logs;
+  let html="<thead><tr><th>Buffs</th><th class='num'>Gaps</th><th class='num'>Shortest</th><th class='num'>Typical</th><th class='num'>Longest</th></tr></thead><tbody>";
+  const by={}; logs.forEach(l=>(by[l.buffs]=by[l.buffs]||[]).push(l.gap));
+  const keys=Object.keys(by).sort();
+  if(!keys.length) html+="<tr><td colspan='5' class='muted'>No gaps logged yet. Tap Charm faded, then Charm landed, while you play.</td></tr>";
+  const base={...readCfg()}; const notes=[];
+  keys.forEach(k=>{ const s=summarize(by[k]);
+    html+=`<tr><td>${k==="0"?"0, charm only":k}</td><td class='num'>${s.n}</td><td class='num'>${s.min.toFixed(1)}</td><td class='num'>${s.med.toFixed(1)}</td><td class='num'>${s.max.toFixed(1)}</td></tr>`;
+    if(s.n>=5){ const rr=predict({...base,model:"rr",buffs:+k},60), lz=predict({...base,model:"lazy",buffs:+k},60);
+      const inside=(p)=>p?by[k].filter(g=>g>=p.min-0.75&&g<=p.max+0.75).length/by[k].length:0;
+      notes.push(`${k} buffs: ${Math.round(inside(rr)*100)}% of your gaps fall inside the round robin range, ${Math.round(inside(lz)*100)}% inside refresh when low.`); } });
+  $("sumTable").innerHTML=html+"</tbody>";
+  $("fitNote").textContent=notes.length?notes.join(" ")+" Ranges use the settings on the Model tab.":"Once a buff count has 5 or more gaps, this compares them against both models.";
+  let lh="<thead><tr><th>#</th><th>Buffs</th><th class='num'>Gap (s)</th><th>When</th></tr></thead><tbody>";
+  logs.slice().reverse().forEach((l,i)=>{ lh+=`<tr><td>${logs.length-i}</td><td>${l.buffs}</td><td class='num'>${l.gap.toFixed(2)}</td><td>${new Date(l.at).toLocaleTimeString()}</td></tr>`; });
+  $("logTable").innerHTML=lh+"</tbody>";
+  $("csv").value="buffs,gap_seconds,timestamp\n"+logs.map(l=>`${l.buffs},${l.gap},${l.at}`).join("\n");
+}
+$("bUndo").addEventListener("click",()=>{ store.logs.pop(); save(); renderLog(); });
+$("bClear").addEventListener("click",()=>{ if(!store.logs.length) return; if(confirm("Clear all logged gaps?")){ store.logs=[]; save(); renderLog(); } });
+
+/* ---------- test plan ---------- */
+const TESTS=[
+ {id:"t1",pri:"Most useful",q:"How low does a buff get before the Measure refreshes it?",
+  how:"No charm. Run 1 buff, then 3 buffs. Each time a buff refreshes, note how much time its icon had left.",
+  tells:"Refreshed with lots of time left, sooner when you have fewer buffs: <b>round robin</b>. Always refreshed with about 3 seconds left no matter how many buffs: <b>refresh when low</b>. Silly and Phlyn both reported songs running down to about 3 seconds, which leans refresh when low."},
+ {id:"t2",pri:"Most useful",q:"Is charm always 18 seconds, or does it break early?",
+  how:"Charm a mob with nothing else in the Measure and no fighting nearby. Time landed to faded ten times with the Live timer.",
+  tells:"Always 18: charm has a fixed length, and your gaps come from the Measure alone. Varies: there is a hidden break chance, which is why the same setup gave you 3 seconds one time and 16 the next. Set the Model tab's break chance to match."},
+ {id:"t3",pri:"Most useful",q:"What does the Measure do on charm's turn while the pet is still charmed?",
+  how:"3 buffs plus charm. Watch the cast bar for a full cycle while the pet stays charmed.",
+  tells:"Straight to the next buff: the slot is skipped for free. A pause or an empty 3 second cast: the slot still costs a beat. Tick the matching box on the Model tab."},
+ {id:"t4",pri:"Important",q:"When charm breaks, where does it go in line?",
+  how:"Log which song is mid cast when the charm breaks, and which songs play before charm comes back.",
+  tells:"Charm waits for its usual spot: round robin. Charm goes next after the current cast: refresh when low. This is the direct test of your 11 and 16 second gaps."},
+ {id:"t5",pri:"Important",q:"Does the recharm only ever start on a server tick?",
+  how:"Turn on the beat and press Sync on a mana regen tick. Note whether recharms always begin on a strong click.",
+  tells:"Yes: the game only notices the break on a tick, adding up to 6 seconds. Tick the matching box on the Model tab."},
+ {id:"t6",pri:"Important",q:"Can you refresh charm on a pet that is still charmed?",
+  how:"With about 3 seconds left on the timer, hand cast charm on your own pet. The Live timer chimes at that moment.",
+  tells:"If it lands and resets the duration, the whole problem goes away: hand cast charm at the chime every time and the pet never gets loose. If it fails or is blocked, you have to wait for the break."},
+ {id:"t7",pri:"Worth checking",q:"Does hand casting charm move it in the Measure or knock out a buff?",
+  how:"With a full Measure, hand cast charm mid cycle and watch which songs follow and whether one drops.",
+  tells:"Tells you whether manually recharming costs you a buff, which ties into the drop behaviour already reported in the thread."},
+ {id:"t8",pri:"Worth checking",q:"Does the gap change between 3 and 4 Measure slots?",
+  how:"Repeat test 3 with a character under 30 and one at 30 or above, or the same one before and after.",
+  tells:"Round robin predicts the longest possible gap grows by about 3 seconds per extra song in the loop."},
+ {id:"t9",pri:"Always",q:"Measure the same two moments every time",
+  how:"Start timing on the charm break message and stop on the charm landing message, never on the cast starting. The chat log or a screen recording gives exact times.",
+  tells:"Your charm only result, under 3 seconds, is shorter than a 3 second cast, so it was almost certainly timed to the cast starting rather than landing. Mixing the two shifts results by up to 3 seconds, which is enough to make the models look wrong. Aim for 10 or more gaps per buff count."}
+];
+function renderTests(){
+  $("tests").innerHTML=TESTS.map((t,i)=>`<details class="test"${i<3?" open":""}><summary><input type="checkbox" data-id="${t.id}" ${store.checks[t.id]?"checked":""} aria-label="Mark test done"><span class="q">${i+1}. ${t.q}</span><span class="pri">${t.pri}</span></summary>
+    <div class="body"><p><b>How:</b> ${t.how}</p><p><b>What it tells you:</b> ${t.tells}</p></div></details>`).join("");
+  $("tests").querySelectorAll("input[type=checkbox]").forEach(cb=>{ cb.addEventListener("click",e=>e.stopPropagation());
+    cb.addEventListener("change",()=>{ store.checks[cb.dataset.id]=cb.checked; save(); }); });
+}
+
+/* ---------- init ---------- */
+loopNote(); renderLog(); renderTests(); requestAnimationFrame(drawDial);
+window.addEventListener("resize",()=>{ if($("p-model").classList.contains("on")) renderModel(); });
+</script>
+</body>
+</html>
